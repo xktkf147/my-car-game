@@ -1160,7 +1160,7 @@
   function killPrey(p) {
     p.dead = true; p.deadT = 0; p.hp = 0; p.bar.hidden = true; p.atk = null; p.held = false;
     G.kills++; G.meat += p.sp.meat;
-    P.hunger = Math.min(100, P.hunger + p.sp.meat);
+    P.hunger = Math.min(100, P.hunger + Math.round(p.sp.meat / 3));
     P.hp = Math.min(P.maxHp, P.hp + 10);
     floatText(new V3(p.pos.x, p.rig.height + 1.5, p.pos.z), '+' + p.sp.meat + 'kg', 'meat', 1);
     feed(`${p.sp.name} 사냥 <b>+${p.sp.meat}kg</b>`);
