@@ -208,9 +208,9 @@
   <div class="card">
     <span class="eyebrow">백악기 후기 · 6,600만 년 전 · 헬크릭 범람원</span>
     <h1>백악기<br><span>사냥꾼</span></h1>
-    <p class="lead">당신은 티라노사우루스입니다. 허기가 계속 줄어드니 쉬지 말고 사냥하세요. 넘어뜨린 먹잇감을 물면 두 배로 아픕니다. 트리케라톱스와 안킬로사우루스는 반격합니다.</p>
+    <p class="lead">당신은 티라노사우루스입니다. 허기가 계속 줄어드니 쉬지 말고 사냥하세요. 넘어뜨린 먹잇감을 물면 두 배로 아픕니다. 트리케라톱스와 안킬로사우루스는 반격하고, 벨로키랍토르 무리는 20초마다 당신을 먼저 찾아와 공격합니다.</p>
     <dl class="moves">
-      <dt><kbd>Q</kbd>박치기 돌진</dt><dd>커서 방향으로 일직선 돌진해 처음 부딪힌 공룡을 넘어뜨립니다. 3초마다 1회 충전, 최대 3회까지 쌓입니다.</dd>
+      <dt><kbd>Q</kbd>박치기 돌진</dt><dd>커서 방향으로 일직선 돌진해 처음 부딪힌 공룡을 넘어뜨립니다. 바위나 나무에 부딪히면 부숴 버립니다. 3초마다 1회 충전, 최대 3회까지 쌓입니다.</dd>
       <dt><kbd>W</kbd>물어뜯기</dt><dd>물고 흔들어 큰 피해와 출혈. 넘어진 대상에게 2배. 기본 공격이 맞을 때마다 재사용 시간이 1초 줄어듭니다.</dd>
       <dt><kbd>E</kbd>꼬리치기</dt><dd>몸을 돌려 꼬리로 주변을 모두 쳐서 밀어냅니다.</dd>
       <dt class="ultk"><kbd>R</kbd>폭군의 처형</dt><dd>Q·W·E를 15번 쓰면 사용 가능. 돌진 거리만큼 뛰어올라 찍어 누르고, 발로 세 번 밟고, 물어 들어 올려 땅에 내리꽂아 기절시킵니다.</dd>
@@ -221,6 +221,7 @@
       <div><i style="background:#7fb2c0"></i>파라사우롤로푸스 <span>무리 지어 도망</span></div>
       <div><i style="background:#c9c37a"></i>트리케라톱스 <span>뿔로 돌진 반격</span></div>
       <div><i style="background:#c98a4a"></i>안킬로사우루스 <span>단단함, 꼬리 곤봉</span></div>
+      <div><i style="background:#ff5a3c"></i>벨로키랍토르 <span>5마리 무리, 먼저 덮침</span></div>
     </div>
     <button class="btn" id="startBtn" type="button">사냥 시작</button>
     <span class="best">최고 기록 <b id="bestStart">0</b> kg</span>
@@ -555,7 +556,7 @@
       cyTrunks.setMatrixAt(i, dummy.matrix);
       dummy.position.y = 2.7 * s; dummy.updateMatrix();
       cyFronds.setMatrixAt(i, dummy.matrix); c.copy(pickLeaf()); cyFronds.setColorAt(i, c);
-      if (i < cyInside) colliders.push({ x, z, r: 1.1 * s });
+      if (i < cyInside) colliders.push({ x, z, r: 1.1 * s, kind: 'tree', parts: [[cyTrunks, i], [cyFronds, i]] });
     }
     // Rocks
     const rkInside = 20, rkEdge = 50, rkTotal = rkInside + rkEdge;
@@ -566,7 +567,7 @@
       const sx = rand(1.4, 3.2), sy = rand(1.0, 2.2), sz = rand(1.4, 3.2);
       dummy.position.set(x, sy * 0.25, z); dummy.rotation.set(rand(-0.2, 0.2), rand(0, TAU), rand(-0.2, 0.2)); dummy.scale.set(sx, sy, sz); dummy.updateMatrix();
       rocks.setMatrixAt(i, dummy.matrix); c.setRGB(1, 1, 1).multiplyScalar(rand(0.8, 1.05)); rocks.setColorAt(i, c);
-      if (i < rkInside) colliders.push({ x, z, r: Math.max(sx, sz) * 0.9 });
+      if (i < rkInside) colliders.push({ x, z, r: Math.max(sx, sz) * 0.9, kind: 'rock', parts: [[rocks, i]] });
     }
     [trunks, crowns, cyTrunks, cyFronds, rocks].forEach(m => { m.castShadow = true; m.receiveShadow = true; scene.add(m); });
 
@@ -662,6 +663,17 @@
       arms: { at: [0.62, 3.05, 1.55], segs: [[0.45, .14, .14, .09], [0.42, .09, .08, .06]], rest: [-0.6, -0.9], claws: 2 },
       legs: { biped: true, hips: [[0.88, -0.6]], segs: [[1.45, .55, .72, .36, .28], [1.4, .34, .32, .2, -.06], [0.85, .2, .17, .14, 0]], rest: [-0.3, 0.8, -0.85], toe: [0.6, 0.13] },
       radius: 2.2
+    },
+    raptor: {
+      tex: { top: '#5e4630', side: '#80623f', belly: '#d6c29a', stripes: 11, stripeW: 12, mark: '34,22,10' }, texLen: 1.4, heavy: 0.2,
+      spine: [N(1.55, -2.9, .03, .03), N(1.55, -2.2, .08, .1), N(1.55, -1.4, .14, .17), N(1.56, -0.7, .24, .28), N(1.55, -0.1, .32, .38), N(1.6, 0.5, .3, .36, { yb: 1.1 }), N(1.75, 0.95, .2, .22), N(2.0, 1.2, .13, .14), N(2.15, 1.35, .12, .12)],
+      bones: [1, 2, 3, 4, 6, 7, 8], root: 3,
+      skull: [N(0.02, -0.12, .11, .13), N(0.04, 0.12, .13, .14, { sq: 2.4 }), N(0, 0.4, .1, .1, { sq: 2.6 }), N(-0.03, 0.62, .07, .065), N(-0.04, 0.74, .035, .035)],
+      jawAt: [-0.07, 0.05], jaw: [N(0, 0, .09, .04), N(-0.02, 0.4, .07, .04), N(-0.03, 0.62, .035, .02)],
+      eye: [0.1, 0.07, 0.14, 0.035], teeth: { z0: 0.18, z1: 0.66, st: 0.08, s: 0.38, j0: 0.15, j1: 0.55, js: 0.09 },
+      arms: { at: [0.22, 1.45, 0.75], segs: [[0.32, .05, .05, .04], [0.3, .04, .035, .03]], rest: [-0.3, -1.2], claws: 3 },
+      legs: { biped: true, hips: [[0.25, -0.05]], segs: [[0.55, .16, .19, .1, .08], [0.55, .1, .08, .06, 0], [0.35, .06, .05, .04, 0]], rest: [-0.3, 0.8, -0.85], toe: [0.22, 0.045] },
+      radius: 0.9
     },
     galli: {
       tex: { top: '#94703f', side: '#b48a52', belly: '#ece0c0', spots: 70, mark: '80,55,28' }, texLen: 1.6, heavy: 0.15,
@@ -771,10 +783,11 @@
       }
     }
     if (d.teeth) {
-      const tg = new THREE.ConeGeometry(0.055, 0.28, 5); tg.rotateX(Math.PI);
-      for (const s of [-1, 1]) for (let z = 0.6; z <= 2.2; z += 0.19) { const sn = sampleNodes(d.skull, z); part(tg, ivory, head, s * sn.rx * 0.8, sn.y - sn.ry * 0.82, z).castShadow = false; }
-      const tl = new THREE.ConeGeometry(0.045, 0.2, 5);
-      for (const s of [-1, 1]) for (let z = 0.5; z <= 1.9; z += 0.22) { const sn = sampleNodes(d.jaw, z); part(tl, ivory, jaw, s * sn.rx * 0.78, sn.y + sn.ry * 0.85, z).castShadow = false; }
+      const T = d.teeth === true ? { z0: 0.6, z1: 2.2, st: 0.19, s: 1, j0: 0.5, j1: 1.9, js: 0.22 } : d.teeth;
+      const tg = new THREE.ConeGeometry(0.055 * T.s, 0.28 * T.s, 5); tg.rotateX(Math.PI);
+      for (const s of [-1, 1]) for (let z = T.z0; z <= T.z1; z += T.st) { const sn = sampleNodes(d.skull, z); part(tg, ivory, head, s * sn.rx * 0.8, sn.y - sn.ry * 0.82, z).castShadow = false; }
+      const tl = new THREE.ConeGeometry(0.045 * T.s, 0.2 * T.s, 5);
+      for (const s of [-1, 1]) for (let z = T.j0; z <= T.j1; z += T.js) { const sn = sampleNodes(d.jaw, z); part(tl, ivory, jaw, s * sn.rx * 0.78, sn.y + sn.ry * 0.85, z).castShadow = false; }
     }
     if (gm.crest) part(gm.crest, std(0x7e3426, { roughness: 0.6, bumpMap: BUMP, bumpScale: 0.03 }), head);
     if (key === 'tri') {
@@ -866,6 +879,7 @@
     galli: { name: '갈리미무스', color: '#e3b06a', hp: 60, walk: 2.2, run: 10.2, meat: 40, alertR: 17, mode: 'flee', mass: 1.4 },
     para: { name: '파라사우롤로푸스', color: '#7fb2c0', hp: 150, walk: 1.8, run: 8.0, meat: 110, alertR: 14, mode: 'flee', mass: 1 },
     tri: { name: '트리케라톱스', color: '#c9c37a', hp: 280, walk: 1.6, run: 7.4, meat: 170, alertR: 9, mode: 'fight', mass: 0.6, dmg: 22 },
+    raptor: { name: '벨로키랍토르', color: '#ff5a3c', hp: 55, walk: 2.6, run: 11, meat: 30, alertR: 20, mode: 'pack', mass: 1.3, dmg: 8 },
     anky: { name: '안킬로사우루스', color: '#c98a4a', hp: 320, walk: 1.3, run: 4.2, meat: 200, alertR: 7, mode: 'tank', mass: 0.45, armor: 0.6, dmg: 16 }
   };
 
@@ -999,6 +1013,7 @@
     hurt() { osc('sawtooth', 220, 110, 0.25, 0.1); noiseHit(0.15, 600, 300, 0.12, 'lowpass'); },
     kill() { osc('triangle', 330, 165, 0.35, 0.12); },
     honk() { osc('sawtooth', 240, 200, 0.35, 0.05); },
+    screech() { osc('sawtooth', 900, 1500, 0.18, 0.06); setTimeout(() => osc('sawtooth', 1100, 1700, 0.22, 0.05), 180); },
     step() { osc('sine', 72, 30, 0.24, 0.17); noiseHit(0.12, 260, 90, 0.05, 'lowpass'); }
   };
   function setMute(m) { muted = m; $('muteBtn').textContent = muted ? '소리 꺼짐 (M)' : '소리 켜짐 (M)'; }
@@ -1011,7 +1026,7 @@
   // ---------- Player ----------
   const Q_RANGE = 18, Q_CHARGE = 3, R_NEED = 15;
   const SKILLS = {
-    q: { name: '박치기 돌진', cd: Q_CHARGE, desc: '커서 방향으로 일직선 돌진합니다. 처음 부딪힌 공룡에게 40 피해를 주고 2.5초 동안 넘어뜨립니다. 3초마다 1회 충전되어 최대 3회까지 쌓입니다.', cdText: '충전 3초 · 최대 3회' },
+    q: { name: '박치기 돌진', cd: Q_CHARGE, desc: '커서 방향으로 일직선 돌진합니다. 처음 부딪힌 공룡에게 40 피해를 주고 2.5초 동안 넘어뜨립니다. 바위나 나무에 부딪히면 부수고 멈춥니다. 3초마다 1회 충전되어 최대 3회까지 쌓입니다.', cdText: '충전 3초 · 최대 3회' },
     w: { name: '물어뜯기', cd: 4, desc: '대상을 물고 흔들어 70 피해와 4초 출혈을 줍니다. 넘어지거나 기절한 대상에게는 2배. 준 피해의 25%만큼 회복합니다.', cdText: '재사용 4초 · 기본 공격 적중마다 1초 감소' },
     e: { name: '꼬리치기', cd: 6, desc: '몸을 한 바퀴 돌려 꼬리로 주변 7.5m 안의 모든 공룡에게 45 피해를 주고 밀어냅니다.', cdText: '재사용 6초' },
     r: { name: '폭군의 처형', cd: 0, desc: '돌진 거리만큼 뛰어올라 대상을 찍어 누르고, 발로 세 번 밟은 뒤, 물어 들어 올려 땅에 내리꽂습니다. 총 약 180 피해, 3초 기절. 사용 중에는 피해를 받지 않습니다.', cdText: 'Q·W·E를 15번 사용하면 준비됨' }
@@ -1046,18 +1061,18 @@
     prey.push(p); herd.members.push(p);
     return p;
   }
-  const HERD = { galli: [4, 5], para: [3, 3], tri: [2, 2], anky: [1, 2] };
-  const POP = { galli: 9, para: 6, tri: 4, anky: 3 };
+  const HERD = { galli: [4, 5], para: [3, 3], tri: [2, 2], anky: [1, 2], raptor: [5, 5] };
+  const POP = { galli: 9, para: 6, tri: 4, anky: 3, raptor: 5 };
   function spawnHerd(key, minFromPlayer) {
     let x = 0, z = 0;
     for (let t = 0; t < 60; t++) {
       [x, z] = ringSpot(22, ARENA - 15);
       if (Math.hypot(x - P.pos.x, z - P.pos.z) > minFromPlayer && Math.hypot(x - LAKE.x, z - LAKE.z) > LAKE.r + 6) break;
     }
-    const herd = { key, center: new V3(x, 0, z), drift: rand(0, TAU), members: [] };
+    const herd = { key, center: new V3(x, 0, z), drift: rand(0, TAU), members: [], huntCd: rand(8, 14), hunting: false, huntT: 0 };
     herds.push(herd);
     const [a, b] = HERD[key], n = a + Math.floor(Math.random() * (b - a + 1));
-    for (let i = 0; i < n; i++) createPrey(key, x + rand(-6, 6), z + rand(-6, 6), herd);
+    for (let i = 0; i < n; i++) createPrey(key, x + rand(-6, 6), z + rand(-6, 6), herd).slot = i;
   }
   function clearPrey() {
     prey.forEach(p => { scene.remove(p.rig.root); p.bar.remove(); p.rig.mats.forEach(m => m.dispose()); });
@@ -1074,9 +1089,18 @@
     if (L > ARENA) { pos.x *= ARENA / L; pos.z *= ARENA / L; }
   }
   function blocked(pos, r) {
-    if (Math.hypot(pos.x, pos.z) > ARENA) return true;
-    for (const c of colliders) if (Math.hypot(pos.x - c.x, pos.z - c.z) < c.r + r) return true;
-    return false;
+    if (Math.hypot(pos.x, pos.z) > ARENA) return 'edge';
+    for (const c of colliders) if (Math.hypot(pos.x - c.x, pos.z - c.z) < c.r + r) return c;
+    return null;
+  }
+  const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+  function breakObstacle(c) {
+    for (const [mesh, i] of c.parts || []) { mesh.setMatrixAt(i, ZERO); mesh.instanceMatrix.needsUpdate = true; }
+    colliders.splice(colliders.indexOf(c), 1);
+    const at = new V3(c.x, 1, c.z);
+    if (c.kind === 'rock') { emit(at, 45, 0x857a68, 9, 7, 1.0); emit(at, 20, 0x5a5246, 6, 5, 0.9); }
+    else { emit(at, 30, 0x6b5536, 8, 6, 1.0); emit(new V3(c.x, 2.5, c.z), 35, 0x6a8a44, 7, 5, 1.1); }
+    dust(at, 25, 8);
   }
 
   // ---------- Floating text & feed ----------
@@ -1100,7 +1124,13 @@
   const G = { mode: 'title', paused: false, meat: 0, kills: 0, time: 0, best: loadBest(), shake: 0, popT: 0 };
   $('bestStart').textContent = G.best.toLocaleString();
 
+  function startHunt(h, sec) {
+    if (!h.hunting) { say('벨로키랍토르 무리가 당신을 노립니다!', 2); sfx.screech(); }
+    h.hunting = true; h.huntT = Math.max(h.huntT, sec || 12);
+    for (const m of h.members) if (!m.dead) { m.state = 'fight'; m.fightT = 0; }
+  }
   function alertHerd(p, hurt) {
+    if (p.sp.mode === 'pack') { startHunt(p.herd, hurt ? 12 : 10); return; }
     for (const m of p.herd.members) {
       if (m.dead || dist2(m.pos, p.pos) > 30) continue;
       if (m.sp.mode === 'flee') { if (m.state !== 'flee') { m.state = 'flee'; m.fleeT = 0; } }
@@ -1130,8 +1160,8 @@
   function killPrey(p) {
     p.dead = true; p.deadT = 0; p.hp = 0; p.bar.hidden = true; p.atk = null; p.held = false;
     G.kills++; G.meat += p.sp.meat;
-    P.hunger = Math.min(100, P.hunger + p.sp.meat * 0.35);
-    P.hp = Math.min(P.maxHp, P.hp + 20);
+    P.hunger = Math.min(100, P.hunger + p.sp.meat);
+    P.hp = Math.min(P.maxHp, P.hp + 10);
     floatText(new V3(p.pos.x, p.rig.height + 1.5, p.pos.z), '+' + p.sp.meat + 'kg', 'meat', 1);
     feed(`${p.sp.name} 사냥 <b>+${p.sp.meat}kg</b>`);
     sfx.kill();
@@ -1192,7 +1222,7 @@
 
     let speed = 0, want = p.yaw, turn = 4;
     r.anim.graze += ((p.state === 'graze' && !p.goal ? 1 : 0) * (p.key === 'galli' || p.key === 'para' ? 0.9 : 0.5) - r.anim.graze) * Math.min(1, dt * 3);
-    r.anim.neck = 0; r.anim.jaw = 0;
+    r.anim.neck = 0; r.anim.jaw = 0; r.anim.crouch = 0;
     p.warn = 0;
 
     if (p.downT > 0) {
@@ -1228,6 +1258,23 @@
         want = toP; turn = 3;
         if (dP < 6) { p.state = 'fight'; p.fightT = 0; }
         else if (dP > p.sp.alertR * 1.8) p.state = 'graze';
+      } else if (p.state === 'fight' && p.sp.mode === 'pack') {
+        // Raptors circle the player, then leap in to bite from different sides
+        if (p.atk) {
+          const a = p.atk; a.t += dt;
+          if (a.phase === 'wind') { want = toP; turn = 10; p.warn = 0.5 + 0.5 * Math.sin(t * 30); r.anim.crouch = 0.25; r.anim.jaw = 0.8; if (a.t > 0.28) { a.phase = 'leap'; a.t = 0; a.dir = toP; p.vy = 7; } }
+          else if (a.phase === 'leap') {
+            speed = 15; want = a.dir; turn = 0; r.anim.crouch = 0; r.anim.jaw = 1;
+            if (!a.hit && dP < P.radius + r.radius + 0.6) { a.hit = true; hurtPlayer(p.sp.dmg, p.pos); sfx.snap(); }
+            if (a.t > 0.36) { p.atk = null; p.atkCd = rand(1.2, 1.9); }
+          }
+        } else {
+          const ang = p.slot / 5 * TAU + t * 0.35, ring = P.radius + r.radius + 2.2;
+          const gx = P.pos.x + Math.cos(ang) * ring - p.pos.x, gz = P.pos.z + Math.sin(ang) * ring - p.pos.z, gd = Math.hypot(gx, gz);
+          if (gd > 1.2) { want = Math.atan2(gx, gz); speed = p.sp.run; turn = 8; } else { want = toP; turn = 8; }
+          if (dP < ring + 1.5 && p.atkCd <= 0) p.atk = { phase: 'wind', t: 0 };
+        }
+        if (!p.herd.hunting) p.state = 'graze';
       } else if (p.state === 'fight') {
         p.fightT += dt;
         if (p.hp < p.maxHp * 0.25 && p.key === 'tri') { p.state = 'flee'; p.fleeT = 0; }
@@ -1381,7 +1428,11 @@
       if (T < 0.14) { const k = T / 0.14; a.neck = 0.5 * k; a.lean = 0.12 * k; }
       else if (!c.done) {
         const np = P.pos.clone().addScaledVector(c.dir, 40 * dt);
-        if (blocked(np, P.radius * 0.7)) { c.done = true; G.shake = 0.35; sfx.thud(); dust(np, 10, 5); }
+        const hitObj = blocked(np, P.radius * 0.7);
+        if (hitObj) {
+          c.done = true; G.shake = 0.55; sfx.thud(); setTimeout(sfx.thud, 70); dust(np, 10, 5);
+          if (hitObj !== 'edge') { breakObstacle(hitObj); hitStop(0.08); say(hitObj.kind === 'rock' ? '쾅! 바위를 부쉈다' : '쾅! 나무를 부러뜨렸다', 1.1); }
+        }
         else { P.pos.x = np.x; P.pos.z = np.z; P.moveSpeed = 30; emit(P.pos, 2, 0xb09a72, 2, 2, 0.4); }
         for (const p of prey) {
           if (p.dead || p.held) continue;
@@ -1708,6 +1759,7 @@
     Object.assign(P.rig.anim, { jaw: 0, neck: 0, kick: 0, kickKnee: 0, graze: 0, lean: 0, yaw: 0, whip: 0, tuck: 0 });
     Object.assign(G, { mode: 'play', paused: false, meat: 0, kills: 0, time: 0, shake: 0, popT: 0 });
     for (const k of ['galli', 'galli', 'para', 'para', 'tri', 'tri', 'anky', 'anky']) spawnHerd(k, 28);
+    spawnHerd('raptor', 55);
     $('startScreen').hidden = true; $('overScreen').hidden = true; $('pause').hidden = true;
     $('feed').innerHTML = '';
     setHud(true);
@@ -1829,7 +1881,7 @@
       else if (tf.downT > 0) chips.push(`<span class="chip gold">${tf.downKind} · 물기 2배</span>`);
       if (tf.bleedT > 0) chips.push('<span class="chip warn">출혈</span>');
       if (tf.state === 'flee') chips.push('<span class="chip">도망 중</span>');
-      if (tf.state === 'fight') chips.push('<span class="chip warn">반격 중</span>');
+      if (tf.state === 'fight') chips.push(`<span class="chip warn">${tf.sp.mode === 'pack' ? '당신을 노리는 중' : '반격 중'}</span>`);
       if (tf.sp.armor && tf.downT <= 0) chips.push('<span class="chip">갑옷 · 피해 40% 감소</span>');
       chips.push(`<span class="chip">고기 ${tf.sp.meat}kg</span>`);
       $('tchips').innerHTML = chips.join('');
@@ -1887,6 +1939,11 @@
       animateRig(P.rig, dt, 0, t);
     }
     for (const h of herds) {
+      if (h.key === 'raptor') {
+        if (!active) { h.hunting = false; }
+        else if (h.hunting) { h.huntT -= dt; if (h.huntT <= 0) { h.hunting = false; h.huntCd = 20; h.center.set(rand(-60, 60), 0, rand(-60, 60)); } }
+        else { h.huntCd -= dt; if (h.huntCd <= 0) startHunt(h, 12); }
+      }
       h.drift += rand(-0.3, 0.3) * dt;
       h.center.x += Math.sin(h.drift) * 0.6 * dt; h.center.z += Math.cos(h.drift) * 0.6 * dt;
       const L = Math.hypot(h.center.x, h.center.z);
@@ -1929,7 +1986,7 @@
     }
   }
 
-  for (const k of ['galli', 'para', 'tri', 'anky']) spawnHerd(k, 10);
+  for (const k of ['galli', 'para', 'tri', 'anky', 'raptor']) spawnHerd(k, 10);
   setHud(false);
 
   let last = performance.now();
