@@ -1,0 +1,820 @@
+<title>냠냠 헬스 챌린지</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+  /* Layout: one 800x600 stage scaled to fit the window; DOM overlays for the menus; touch pad below on phones.
+     Palette: purple, orange and black only (with their lighter and darker shades). */
+  :root {
+    --black: #0d0812;
+    --p0: #170d26; --p1: #24133b; --p2: #3a1f5c; --p3: #5b3391; --p4: #8a5fc7; --p5: #c4a8ef;
+    --o1: #7a3510; --o2: #c2560f; --o3: #ff7a1a; --o4: #ffa552; --o5: #ffd6a8;
+    --display: 'Jua', 'Gowun Dodum', system-ui, sans-serif;
+    --body: 'Gowun Dodum', 'Jua', system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--black); color: var(--o5); font-family: var(--body);
+    overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    -webkit-user-select: none; user-select: none; touch-action: manipulation;
+  }
+  #wrap { position: relative; flex: none; }
+  #stage { position: absolute; left: 0; top: 0; width: 800px; height: 600px; transform-origin: 0 0; overflow: hidden; border-radius: 6px; box-shadow: 0 0 0 1px var(--p2), 0 20px 60px rgba(91, 51, 145, .35); }
+  #c { position: absolute; inset: 0; width: 800px; height: 600px; display: block; outline: none; }
+
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: rgba(13, 8, 18, .72); text-align: center; padding: 24px; box-sizing: border-box; }
+  .screen.left { align-items: flex-start; text-align: left; }
+  h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 76px; line-height: 1; color: var(--o3); text-shadow: 0 0 24px rgba(255, 122, 26, .55), 0 4px 0 var(--o1); letter-spacing: -0.01em; }
+  h1 small { display: block; font-size: 30px; color: var(--p5); text-shadow: none; margin-top: 10px; }
+  h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 34px; color: var(--o3); }
+  .tag { font-family: var(--display); font-size: 16px; letter-spacing: .08em; color: var(--p5); }
+  .row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { font-family: var(--display); font-size: 24px; padding: 10px 28px 8px; border-radius: 30px; border: 2px solid var(--o3); background: var(--o3); color: var(--black); cursor: pointer; box-shadow: 0 4px 0 var(--o1); transition: transform .1s; }
+  .btn.ghost { background: transparent; color: var(--o4); border-color: var(--p4); box-shadow: 0 4px 0 var(--p2); }
+  .btn:hover { transform: translateY(-2px); }
+  .btn:focus-visible { outline: 3px solid var(--p5); outline-offset: 3px; }
+  .best { font-size: 16px; color: var(--p5); }
+  .best b { color: var(--o4); font-family: var(--display); font-weight: 400; font-size: 20px; }
+  .hint { font-size: 15px; color: var(--p5); }
+  kbd { font-family: var(--display); font-size: 15px; padding: 1px 8px; border-radius: 4px; border: 1px solid var(--p4); border-bottom-width: 3px; color: var(--o5); background: var(--p1); }
+
+  /* Help screen */
+  #help { justify-content: flex-start; gap: 12px; padding: 22px 30px; background: rgba(13, 8, 18, .9); }
+  .help-grid { display: grid; grid-template-columns: 250px 1fr; gap: 18px; width: 100%; text-align: left; }
+  .help-grid h3 { margin: 0 0 6px; font-family: var(--display); font-weight: 400; font-size: 19px; color: var(--o4); }
+  .help-grid ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.65; }
+  .foods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; }
+  .food { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 8px; font-size: 13.5px; padding: 3px 6px; border-radius: 6px; background: rgba(36, 19, 59, .7); }
+  .food img { width: 32px; height: 32px; }
+  .food.good img, .food.item img { filter: drop-shadow(0 0 5px rgba(255, 165, 82, .9)); }
+  .food.junk img { filter: drop-shadow(0 0 4px #000) drop-shadow(0 0 6px #000); }
+  .food b { font-family: var(--display); font-weight: 400; font-size: 15px; color: var(--o5); display: block; }
+  .food span { color: var(--p5); }
+  .food i { font-style: normal; font-family: var(--display); color: var(--o4); font-size: 13px; }
+  .food.junk b { color: var(--p5); }
+  .food.item b { color: var(--o3); }
+
+  /* Result */
+  .score-big { font-family: var(--display); font-size: 64px; line-height: 1; color: var(--o3); text-shadow: 0 0 18px rgba(255, 122, 26, .5); }
+  .newbest { font-family: var(--display); font-size: 16px; background: var(--o3); color: var(--black); padding: 2px 12px; border-radius: 12px; }
+  .stage-card { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-radius: 10px; background: rgba(36, 19, 59, .8); border: 1px solid var(--p3); }
+  .stage-card canvas { width: 96px; height: 104px; }
+  .stage-card b { font-family: var(--display); font-weight: 400; font-size: 22px; color: var(--o4); display: block; }
+
+  /* Touch controls */
+  #pad { display: flex; gap: 12px; margin-top: 12px; width: min(800px, 100%); justify-content: space-between; }
+  #pad button { flex: 1; height: 72px; border-radius: 14px; border: 2px solid var(--p3); background: var(--p1); color: var(--o4); font-family: var(--display); font-size: 22px; touch-action: none; }
+  #pad button.on { background: var(--p3); color: var(--o5); }
+  #pad .ex { flex: 1.4; border-color: var(--o2); color: var(--o3); }
+  #pad .pz { flex: .6; font-size: 16px; }
+</style>
+
+<div id="wrap">
+  <div id="stage">
+    <canvas id="c" width="800" height="600" tabindex="-1"></canvas>
+
+    <div class="screen" id="start">
+      <span class="tag">할로윈 밤 축제 거리</span>
+      <h1>냠냠 헬스 챌린지<small>건강하게 먹고, 과식하면 줄넘기!</small></h1>
+      <div class="row">
+        <button class="btn" id="startBtn" type="button">시작하기</button>
+        <button class="btn ghost" id="helpBtn" type="button">게임 설명</button>
+      </div>
+      <span class="best">최고 점수 <b id="bestStart">0</b></span>
+      <span class="hint"><kbd>←</kbd> <kbd>→</kbd> (또는 <kbd>A</kbd> <kbd>D</kbd>) 꾹 눌러 이동 · <kbd>Space</kbd> 줄넘기 · <kbd>P</kbd> 일시정지</span>
+    </div>
+
+    <div class="screen" id="help" hidden>
+      <h2>게임 설명</h2>
+      <div class="help-grid">
+        <div>
+          <h3>조작</h3>
+          <ul>
+            <li><kbd>←</kbd> <kbd>→</kbd> 좌우 이동</li>
+            <li><kbd>Space</kbd> 누르는 동안 줄넘기 (이동 불가)</li>
+            <li><kbd>P</kbd> 일시정지</li>
+          </ul>
+          <h3 style="margin-top:12px">게이지</h3>
+          <ul>
+            <li><b>건강</b> 0이 되면 게임 오버</li>
+            <li><b>무거움</b> 100이 되면 게임 오버. 줄넘기 0.5초마다 −5. 70 이상이면 느려짐</li>
+            <li><b>체력</b> 줄넘기 0.5초마다 −10, 쉬면 1초마다 +10. 0이 되면 3초간 줄넘기 불가</li>
+            <li><b>몸매</b> 건강 음식·물·줄넘기는 날씬하게, 정크푸드는 동글동글하게. 몸이 커지면 음식에 더 잘 닿아요</li>
+          </ul>
+          <h3 style="margin-top:12px">목표</h3>
+          <ul><li>90초를 버티면 클리어! 30초마다 음식이 빨라지고 정크푸드가 늘어나요.</li></ul>
+        </div>
+        <div>
+          <h3>음식과 아이템 <span style="color:var(--p5);font-size:13px">(반짝이는 음식 = 건강, 검은 연기 나는 음식 = 정크)</span></h3>
+          <div class="foods" id="foodList"></div>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn" id="helpStart" type="button">시작하기</button>
+        <button class="btn ghost" id="helpBack" type="button">돌아가기</button>
+      </div>
+    </div>
+
+    <div class="screen" id="result" hidden>
+      <span class="tag" id="resTag">결과</span>
+      <h2 id="resTitle">클리어!</h2>
+      <span class="hint" id="resReason"></span>
+      <div class="score-big" id="resScore">0</div>
+      <span class="newbest" id="newBest" hidden>새 최고 점수!</span>
+      <span class="best">최고 점수 <b id="bestRes">0</b></span>
+      <div class="stage-card"><canvas id="portrait" width="192" height="208"></canvas><div><span class="hint">마지막 모습</span><b id="resStage">보통</b></div></div>
+      <div class="row">
+        <button class="btn" id="againBtn" type="button">다시하기</button>
+        <button class="btn ghost" id="homeBtn" type="button">처음으로</button>
+      </div>
+    </div>
+
+    <div class="screen" id="pause" hidden>
+      <h2>일시정지</h2>
+      <span class="hint"><kbd>P</kbd>를 누르거나 계속하기를 누르세요</span>
+      <button class="btn" id="resumeBtn" type="button">계속하기</button>
+    </div>
+  </div>
+</div>
+<div id="pad" hidden>
+  <button type="button" data-k="left">◀</button>
+  <button type="button" class="ex" data-k="ex">줄넘기</button>
+  <button type="button" data-k="right">▶</button>
+  <button type="button" class="pz" data-k="pause">일시정지</button>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const W = 800, H = 600, GROUND = 556, DPR = Math.min(2.5, (window.devicePixelRatio || 1) * 1.25);
+  const TAU = Math.PI * 2;
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const C = {
+    black: '#0d0812', p0: '#170d26', p1: '#24133b', p2: '#3a1f5c', p3: '#5b3391', p4: '#8a5fc7', p5: '#c4a8ef',
+    o0: '#3d1a06', o1: '#7a3510', o2: '#c2560f', o3: '#ff7a1a', o4: '#ffa552', o5: '#ffd6a8'
+  };
+  const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+
+  const canvas = $('c'), ctx = canvas.getContext('2d');
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  function layer(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w * DPR; c.height = h * DPR;
+    const g = c.getContext('2d'); g.setTransform(DPR, 0, 0, DPR, 0, 0); draw(g, w, h);
+    c.lw = w; return c;
+  }
+
+  // ---------- Parallax layers ----------
+  // Layer 1: sky and moon
+  const skyLayer = layer(1000, 600, (g, w, h) => {
+    const gr = g.createLinearGradient(0, 0, 0, 520);
+    gr.addColorStop(0, C.black); gr.addColorStop(0.35, C.p0); gr.addColorStop(0.62, C.p2); gr.addColorStop(0.82, C.p3); gr.addColorStop(1, C.o2);
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 160; i++) { g.fillStyle = rgba(Math.random() < 0.7 ? C.p5 : C.o5, rand(0.25, 0.9)); const r = rand(0.5, 1.6); g.beginPath(); g.arc(rand(0, w), rand(0, 330), r, 0, TAU); g.fill(); }
+    const mx = 720, my = 120;
+    const glow = g.createRadialGradient(mx, my, 30, mx, my, 170); glow.addColorStop(0, rgba(C.o4, 0.45)); glow.addColorStop(1, rgba(C.o4, 0));
+    g.fillStyle = glow; g.fillRect(mx - 180, my - 180, 360, 360);
+    g.fillStyle = C.o5; g.beginPath(); g.arc(mx, my, 50, 0, TAU); g.fill();
+    g.fillStyle = rgba(C.o4, 0.55);
+    [[-16, -12, 11], [14, 8, 8], [-6, 20, 6], [20, -18, 5]].forEach(([x, y, r]) => { g.beginPath(); g.arc(mx + x, my + y, r, 0, TAU); g.fill(); });
+  });
+  // Layer 2: distant castle silhouette on hills
+  const castleLayer = layer(1200, 600, (g, w) => {
+    g.fillStyle = C.p1;
+    g.beginPath(); g.moveTo(0, 600);
+    for (let x = 0; x <= w; x += 20) g.lineTo(x, 430 - Math.sin(x / w * TAU * 2) * 22 - Math.sin(x / w * TAU * 5 + 1) * 8);
+    g.lineTo(w, 600); g.closePath(); g.fill();
+    const tower = (x, base, tw, th, roof) => {
+      g.fillRect(x - tw / 2, base - th, tw, th);
+      g.beginPath(); g.moveTo(x - tw / 2 - 4, base - th); g.lineTo(x, base - th - roof); g.lineTo(x + tw / 2 + 4, base - th); g.closePath(); g.fill();
+      for (let k = 0; k < Math.floor(th / 40); k++) if (Math.random() < 0.6) { g.fillStyle = rgba(C.o3, rand(0.5, 0.95)); g.fillRect(x - 3, base - th + 18 + k * 40, 6, 10); g.fillStyle = C.p1; }
+    };
+    const castle = (cx, base, s) => {
+      g.fillStyle = C.p1;
+      g.fillRect(cx - 90 * s, base - 70 * s, 180 * s, 70 * s);
+      for (let k = 0; k < 9; k++) g.fillRect(cx - 90 * s + k * 21 * s, base - 80 * s, 11 * s, 10 * s);
+      tower(cx - 95 * s, base, 30 * s, 120 * s, 55 * s);
+      tower(cx + 95 * s, base, 30 * s, 110 * s, 50 * s);
+      tower(cx - 35 * s, base - 60 * s, 26 * s, 80 * s, 60 * s);
+      tower(cx + 30 * s, base - 60 * s, 34 * s, 120 * s, 75 * s);
+      g.fillStyle = C.p1;
+      g.beginPath(); g.moveTo(cx + 30 * s, base - 255 * s); g.lineTo(cx + 30 * s, base - 285 * s); g.lineTo(cx + 46 * s, base - 278 * s); g.lineTo(cx + 30 * s, base - 270 * s); g.fill();
+      g.fillStyle = rgba(C.o3, 0.8); g.beginPath(); g.arc(cx, base - 22 * s, 14 * s, Math.PI, 0); g.fill(); g.fillRect(cx - 14 * s, base - 22 * s, 28 * s, 22 * s);
+    };
+    castle(330, 425, 1);
+    castle(930, 440, 0.6);
+    g.fillStyle = C.p1;
+    [120, 560, 760, 1100].forEach(x => { g.fillRect(x - 3, 380, 6, 60); g.beginPath(); g.arc(x, 380, 20, 0, TAU); g.fill(); });
+  });
+  // Layer 3: festival stall street
+  const lanterns = [];
+  const STREET_W = 1400;
+  const streetLayer = layer(STREET_W, 600, (g, w) => {
+    g.fillStyle = C.black;
+    let x = 0;
+    while (x < w) { const bw = rand(70, 140), bh = rand(90, 170); g.fillRect(x, 460 - bh, bw, bh + 140); if (Math.random() < 0.6) { g.beginPath(); g.moveTo(x - 6, 460 - bh); g.lineTo(x + bw / 2, 460 - bh - rand(30, 60)); g.lineTo(x + bw + 6, 460 - bh); g.fill(); } for (let k = 0; k < 4; k++) if (Math.random() < 0.5) { g.fillStyle = rgba(C.o3, rand(0.35, 0.8)); g.fillRect(x + rand(10, bw - 22), 460 - bh + rand(14, bh - 30), 12, 16); g.fillStyle = C.black; } x += bw + rand(0, 10); }
+    const names = ['호박죽', '솜사탕', '꼬치', '사탕', '호떡', '마녀 수프', '쿠키', '군고구마'];
+    for (let i = 0; i < 7; i++) {
+      const sx = 40 + i * 200, sw = 150, top = 405;
+      g.fillStyle = C.p0; g.fillRect(sx + 6, top, 6, GROUND - top); g.fillRect(sx + sw - 12, top, 6, GROUND - top);
+      g.fillStyle = C.p1; g.fillRect(sx, 488, sw, GROUND - 488);
+      g.fillStyle = rgba(C.o3, 0.35); g.fillRect(sx, 488, sw, 4);
+      for (let k = 0; k < 6; k++) { g.fillStyle = k % 2 ? C.p3 : C.o2; g.beginPath(); g.moveTo(sx - 8 + k * (sw + 16) / 6, top); g.lineTo(sx - 8 + (k + 1) * (sw + 16) / 6, top); g.lineTo(sx - 8 + (k + 1) * (sw + 16) / 6 - 6, top - 40); g.lineTo(sx - 8 + k * (sw + 16) / 6 + 6, top - 40); g.closePath(); g.fill(); }
+      for (let k = 0; k < 6; k++) { g.fillStyle = k % 2 ? C.p3 : C.o2; g.beginPath(); g.arc(sx - 8 + (k + 0.5) * (sw + 16) / 6, top, (sw + 16) / 12, 0, Math.PI); g.fill(); }
+      g.fillStyle = C.black; g.fillRect(sx + 30, top - 66, sw - 60, 24);
+      g.fillStyle = C.o4; g.font = '16px Jua, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(names[i], sx + sw / 2, top - 53);
+      for (let k = 0; k < 4; k++) { g.fillStyle = k % 2 ? C.o3 : C.p4; g.beginPath(); g.arc(sx + 28 + k * 32, 482, 8, 0, TAU); g.fill(); }
+    }
+    g.strokeStyle = C.black; g.lineWidth = 2;
+    for (let seg = 0; seg < 7; seg++) {
+      const x0 = seg * 200 + 10, x1 = x0 + 200;
+      g.beginPath(); g.moveTo(x0, 248); g.quadraticCurveTo((x0 + x1) / 2, 293, x1, 248); g.stroke();
+      for (let k = 1; k <= 3; k++) { const t = k / 4, lx = x0 + (x1 - x0) * t, ly = 248 + 45 * 2 * t * (1 - t); lanterns.push({ x: lx, y: ly + 16, ph: rand(0, TAU), sp: rand(5, 11), size: rand(0.8, 1.05) }); g.beginPath(); g.moveTo(lx, ly); g.lineTo(lx, ly + 8); g.stroke(); }
+    }
+  });
+  // Foreground street
+  const groundLayer = layer(800, 60, (g) => {
+    g.fillStyle = C.black; g.fillRect(0, 0, 800, 60);
+    g.fillStyle = rgba(C.o3, 0.5); g.fillRect(0, 0, 800, 2);
+    for (let r = 0; r < 3; r++) for (let x = (r % 2) * 20; x < 820; x += 40) { g.fillStyle = rgba(r === 0 ? C.p2 : C.p1, 0.9); g.beginPath(); g.ellipse(x, 10 + r * 17, 17, 6, 0, 0, TAU); g.fill(); }
+  });
+
+  function drawWrapped(img, off, y) {
+    const w = img.lw;
+    let o = ((off % w) + w) % w;
+    ctx.drawImage(img, -o, y, w, img.height / DPR);
+    if (w - o < W) ctx.drawImage(img, w - o, y, w, img.height / DPR);
+  }
+  function drawPumpkin(x, y, s, f) {
+    const glow = ctx.createRadialGradient(x, y, 4, x, y, 46 * s);
+    glow.addColorStop(0, rgba(C.o3, 0.45 * f)); glow.addColorStop(1, rgba(C.o3, 0));
+    ctx.fillStyle = glow; ctx.fillRect(x - 50 * s, y - 50 * s, 100 * s, 100 * s);
+    ctx.fillStyle = C.o2; ctx.beginPath(); ctx.ellipse(x, y, 15 * s, 12 * s, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = C.o3; ctx.beginPath(); ctx.ellipse(x, y, 9 * s, 12 * s, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = C.black; ctx.fillRect(x - 2 * s, y - 16 * s, 4 * s, 5 * s);
+    ctx.fillStyle = rgba(C.o5, 0.4 + 0.6 * f);
+    ctx.beginPath(); ctx.moveTo(x - 8 * s, y - 3 * s); ctx.lineTo(x - 4 * s, y - 7 * s); ctx.lineTo(x - 1 * s, y - 3 * s); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x + 8 * s, y - 3 * s); ctx.lineTo(x + 4 * s, y - 7 * s); ctx.lineTo(x + 1 * s, y - 3 * s); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x - 9 * s, y + 2 * s); ctx.lineTo(x + 9 * s, y + 2 * s); ctx.lineTo(x + 5 * s, y + 7 * s); ctx.lineTo(x + 2 * s, y + 5 * s); ctx.lineTo(x - 2 * s, y + 7 * s); ctx.lineTo(x - 5 * s, y + 5 * s); ctx.closePath(); ctx.fill();
+  }
+
+  // Ambient life: clouds, bats, fireflies
+  const clouds = Array.from({ length: 4 }, (_, i) => ({ x: i * 260 + rand(0, 100), y: rand(150, 300), w: rand(160, 260), sp: rand(6, 12) }));
+  const bats = Array.from({ length: 6 }, () => ({ x: rand(0, W), y: rand(70, 290), vx: rand(40, 85) * (Math.random() < 0.5 ? -1 : 1), ph: rand(0, TAU), amp: rand(10, 30), s: rand(0.6, 1.1) }));
+  const flies = Array.from({ length: 30 }, () => ({ x: rand(0, W), y: rand(260, 540), ph: rand(0, TAU), sp: rand(0.4, 1.1), r: rand(1.4, 2.6) }));
+  function drawBat(b, t) {
+    const flap = Math.sin(t * 16 + b.ph), s = b.s, dir = Math.sign(b.vx);
+    ctx.save(); ctx.translate(b.x, b.y + Math.sin(t * 2 + b.ph) * b.amp); ctx.scale(dir * s, s);
+    ctx.fillStyle = C.black;
+    ctx.beginPath(); ctx.ellipse(0, 0, 6, 4, 0, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(5, -2, 3.2, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(4, -4); ctx.lineTo(5, -8); ctx.lineTo(7, -4); ctx.fill();
+    for (const side of [-1, 1]) {
+      const wy = flap * 9 * side;
+      ctx.beginPath(); ctx.moveTo(-2, 0);
+      ctx.quadraticCurveTo(-6, side * (6 + wy * 0.5) - 4, -18, side * 2 + wy - 2);
+      ctx.quadraticCurveTo(-12, side * 2 + wy * 0.4, -10, side * 3);
+      ctx.quadraticCurveTo(-6, side * 2, -2, 2 * side);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(2, 0);
+      ctx.quadraticCurveTo(-2, -side * (6 + wy * 0.5) - 4 + 8, -14, -side * 1 - wy - 2 + 4);
+      ctx.quadraticCurveTo(-6, -side * 2, 2, 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ---------- Food sprites (palette-only vector art) ----------
+  const FOOD = [
+    { id: 'salad', name: '샐러드', kind: 'good', w: 15, eff: { health: 10, score: 10 }, txt: '건강 +10 · 점수 +10' },
+    { id: 'apple', name: '사과', kind: 'good', w: 15, eff: { health: 8, score: 10 }, txt: '건강 +8 · 점수 +10' },
+    { id: 'fish', name: '생선', kind: 'good', w: 10, eff: { health: 12, score: 15 }, txt: '건강 +12 · 점수 +15' },
+    { id: 'broc', name: '브로콜리', kind: 'good', w: 10, eff: { health: 10, score: 10 }, txt: '건강 +10 · 점수 +10' },
+    { id: 'burger', name: '햄버거', kind: 'junk', w: 15, eff: { weight: 15, health: -5 }, txt: '무거움 +15 · 건강 −5' },
+    { id: 'cola', name: '콜라', kind: 'junk', w: 12, eff: { weight: 10, health: -5 }, txt: '무거움 +10 · 건강 −5' },
+    { id: 'snack', name: '과자', kind: 'junk', w: 12, eff: { weight: 10, health: -5 }, txt: '무거움 +10 · 건강 −5' },
+    { id: 'donut', name: '도넛', kind: 'junk', w: 6, eff: { weight: 20, health: -5 }, txt: '무거움 +20 · 건강 −5' },
+    { id: 'water', name: '물', kind: 'item', w: 3, eff: { weight: -20 }, txt: '무거움 −20' },
+    { id: 'gold', name: '황금 사과', kind: 'item', w: 2, eff: {}, txt: '5초간 정크푸드 효과 무시' }
+  ];
+  const drawFood = {
+    salad(g) {
+      g.fillStyle = C.o4; for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(12 + k * 4.8, 22 - (k % 2) * 4, 7, 0, TAU); g.fill(); }
+      g.fillStyle = C.o3; g.beginPath(); g.arc(18, 18, 4, 0, TAU); g.arc(30, 17, 3.5, 0, TAU); g.fill();
+      g.fillStyle = C.p4; g.beginPath(); g.moveTo(5, 24); g.lineTo(43, 24); g.quadraticCurveTo(40, 42, 24, 42); g.quadraticCurveTo(8, 42, 5, 24); g.fill();
+      g.fillStyle = C.p5; g.fillRect(8, 24, 32, 3);
+    },
+    apple(g, gold) {
+      g.fillStyle = gold ? C.o4 : C.o3; g.beginPath(); g.arc(18, 27, 13, 0, TAU); g.arc(30, 27, 13, 0, TAU); g.fill();
+      g.fillStyle = gold ? C.o5 : C.o4; g.beginPath(); g.ellipse(17, 22, 4, 6, -0.4, 0, TAU); g.fill();
+      g.strokeStyle = C.black; g.lineWidth = 3; g.beginPath(); g.moveTo(24, 16); g.quadraticCurveTo(25, 9, 28, 6); g.stroke();
+      g.fillStyle = gold ? C.o5 : C.p4; g.beginPath(); g.ellipse(32, 10, 7, 3.5, -0.5, 0, TAU); g.fill();
+    },
+    fish(g) {
+      g.fillStyle = C.o3; g.beginPath(); g.ellipse(22, 24, 16, 10, 0, 0, TAU); g.fill();
+      g.beginPath(); g.moveTo(34, 24); g.lineTo(46, 14); g.lineTo(46, 34); g.closePath(); g.fill();
+      g.fillStyle = C.o4; g.beginPath(); g.ellipse(20, 28, 11, 4, 0, 0, TAU); g.fill();
+      g.strokeStyle = C.o2; g.lineWidth = 2; for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(22 + k * 5, 24, 6, -0.9, 0.9); g.stroke(); }
+      g.fillStyle = C.black; g.beginPath(); g.arc(12, 21, 2.6, 0, TAU); g.fill();
+      g.fillStyle = C.o5; g.beginPath(); g.arc(11.3, 20.3, 0.9, 0, TAU); g.fill();
+    },
+    broc(g) {
+      g.fillStyle = C.o4; g.beginPath(); g.moveTo(20, 26); g.lineTo(28, 26); g.lineTo(27, 44); g.lineTo(21, 44); g.closePath(); g.fill();
+      g.fillStyle = C.o2; [[14, 22, 8], [24, 15, 10], [34, 22, 8], [24, 24, 8]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); });
+      g.fillStyle = C.o3; [[13, 20, 3], [22, 12, 3.5], [30, 14, 3], [35, 20, 3], [25, 22, 3]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); });
+    },
+    burger(g) {
+      g.fillStyle = C.o3; g.beginPath(); g.ellipse(24, 17, 18, 10, 0, Math.PI, 0); g.fill(); g.fillRect(6, 17, 36, 3);
+      g.fillStyle = C.o5; [[16, 11], [24, 9], [31, 12]].forEach(([x, y]) => { g.beginPath(); g.ellipse(x, y, 1.6, 1, 0, 0, TAU); g.fill(); });
+      g.fillStyle = C.p4; g.beginPath(); for (let k = 0; k < 7; k++) { g.lineTo(6 + k * 6, 21 + (k % 2) * 4); } g.lineTo(42, 21); g.fill();
+      g.fillStyle = C.black; g.fillRect(7, 23, 34, 7);
+      g.fillStyle = C.o4; g.beginPath(); g.moveTo(8, 30); g.lineTo(40, 30); g.lineTo(34, 35); g.lineTo(14, 35); g.fill();
+      g.fillStyle = C.o2; g.beginPath(); g.ellipse(24, 37, 18, 6, 0, 0, TAU); g.fill();
+    },
+    cola(g) {
+      g.fillStyle = C.o3; g.save(); g.translate(28, 2); g.rotate(0.25); g.fillRect(0, 0, 3, 16); g.restore();
+      g.fillStyle = C.p5; g.beginPath(); g.ellipse(24, 12, 13, 4, 0, 0, TAU); g.fill();
+      g.fillStyle = C.p3; g.beginPath(); g.moveTo(11, 13); g.lineTo(37, 13); g.lineTo(33, 45); g.lineTo(15, 45); g.closePath(); g.fill();
+      g.fillStyle = C.p5; g.fillRect(14, 24, 20, 6);
+      g.fillStyle = C.o3; g.font = '7px Jua, sans-serif'; g.textAlign = 'center'; g.fillText('COLA', 24, 29.5);
+    },
+    snack(g) {
+      g.fillStyle = C.p3; g.beginPath(); g.moveTo(10, 8); g.lineTo(38, 8); g.lineTo(40, 42); g.lineTo(8, 42); g.closePath(); g.fill();
+      g.fillStyle = C.p4; for (let k = 0; k < 7; k++) { g.beginPath(); g.moveTo(10 + k * 4, 8); g.lineTo(12 + k * 4, 4); g.lineTo(14 + k * 4, 8); g.fill(); g.beginPath(); g.moveTo(8 + k * 4.6, 42); g.lineTo(10.3 + k * 4.6, 46); g.lineTo(12.6 + k * 4.6, 42); g.fill(); }
+      g.fillStyle = C.o3; g.beginPath(); g.arc(24, 25, 9, 0, TAU); g.fill();
+      g.fillStyle = C.o5; g.font = '9px Jua, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('과자', 24, 25.5);
+    },
+    donut(g) {
+      g.fillStyle = C.o2; g.beginPath(); g.arc(24, 25, 18, 0, TAU); g.arc(24, 25, 6, 0, TAU, true); g.fill('evenodd');
+      g.fillStyle = C.p4; g.beginPath();
+      for (let k = 0; k <= 24; k++) { const a = k / 24 * TAU, r = 15 + (k % 2) * 2.5; g.lineTo(24 + Math.cos(a) * r, 24 + Math.sin(a) * r); }
+      g.arc(24, 24, 7, 0, TAU, true); g.fill('evenodd');
+      const sp = [C.o4, C.o5, C.black]; for (let k = 0; k < 12; k++) { const a = k / 12 * TAU + 0.2, r = 11 + (k % 3) * 1.5; g.fillStyle = sp[k % 3]; g.save(); g.translate(24 + Math.cos(a) * r, 24 + Math.sin(a) * r); g.rotate(a * 2); g.fillRect(-2, -0.8, 4, 1.6); g.restore(); }
+    },
+    water(g) {
+      g.fillStyle = C.p5; g.beginPath(); g.moveTo(24, 5); g.bezierCurveTo(30, 16, 38, 22, 38, 31); g.arc(24, 31, 14, 0, Math.PI); g.bezierCurveTo(10, 22, 18, 16, 24, 5); g.fill();
+      g.fillStyle = C.p4; g.beginPath(); g.arc(24, 33, 9, 0.2, Math.PI - 0.2); g.fill();
+      g.fillStyle = '#efe4ff'; g.beginPath(); g.ellipse(18, 27, 2.5, 5, 0.3, 0, TAU); g.fill();
+    },
+    gold(g) {
+      drawFood.apple(g, true);
+      g.fillStyle = C.o5; const star = (x, y, r) => { g.beginPath(); for (let k = 0; k < 8; k++) { const a = k / 8 * TAU, rr = k % 2 ? r * 0.35 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.fill(); };
+      star(38, 36, 6); star(9, 13, 4);
+    }
+  };
+  const sprites = {};
+  FOOD.forEach(f => {
+    sprites[f.id] = layer(48, 48, g => {
+      drawFood[f.id](g);
+      // Junk food gets a soot-dark coat so it reads as "bad" at a glance
+      if (f.kind === 'junk') { g.globalCompositeOperation = 'source-atop'; g.fillStyle = rgba(C.black, 0.5); g.fillRect(0, 0, 48, 48); g.globalCompositeOperation = 'source-over'; }
+    });
+  });
+  function spriteURL(id) { return sprites[id].toDataURL(); }
+  $('foodList').innerHTML = FOOD.map(f => `<div class="food ${f.kind}"><img src="${spriteURL(f.id)}" alt=""><div><b>${f.name}</b><span>${f.txt}</span></div><i>${f.w}%</i></div>`).join('');
+
+  // ---------- Character ----------
+  const STAGES = ['지친 모습', '보통 모습', '반짝 모습'];
+  const stageOf = h => h <= 30 ? 0 : h <= 70 ? 1 : 2;
+  // Body shape: fat < 0 is slim (healthy food, water, jump rope), fat > 0 rounds out (junk food)
+  const BODY = [['날씬', -1], ['보통', -0.15], ['통통', 0.2], ['동글동글', 0.55]];
+  const bodyOf = f => f < -0.15 ? 0 : f < 0.2 ? 1 : f < 0.55 ? 2 : 3;
+  function drawKid(g, x, feet, o) {
+    const st = o.stage, t = o.t, fat = o.fat || 0, plump = Math.max(0, fat);
+    const pal = st === 0 ? { skin: C.o4, cape: C.o1, robe: C.p2, hat: C.p2, band: C.o2, belly: C.p3 } : { skin: C.o5, cape: C.o2, robe: C.p3, hat: C.p3, band: C.o3, belly: C.p4 };
+    const hop = o.ex ? Math.abs(Math.sin(o.exPhase * Math.PI)) * 16 : 0;
+    const y = feet - hop, bw = fat >= 0 ? 1 + fat * 1.1 : 1 + fat * 0.75, ws = bw;
+    const sq = o.squash || 0;
+    g.save(); g.translate(x, feet); g.scale(1 + sq, 1 - sq * 0.9); g.translate(-x, -feet);
+    g.fillStyle = rgba(C.black, 0.45); g.beginPath(); g.ellipse(x, feet + 2, 26 * ws - hop * 0.4, 6, 0, 0, TAU); g.fill();
+    const sh = 12 * (0.75 + 0.25 * bw), bh = 17 * bw, hem = 19 * Math.min(bw, 1.25) + plump * 4, top = y - 46, mid = y - 26 + plump * 2, bot = y - 8;
+    const reach = bh * 1.1 + 12;
+    const ropeY = y - 40 + Math.cos(o.exPhase * Math.PI) * 62;
+    const rope = front => {
+      if (!o.ex) return;
+      const isFront = Math.sin(o.exPhase * Math.PI) < 0 ? false : Math.cos(o.exPhase * Math.PI) < 0;
+      if (isFront !== front) return;
+      g.strokeStyle = C.o4; g.lineWidth = 2.5; g.beginPath(); g.moveTo(x - reach, y - 36); g.quadraticCurveTo(x, ropeY + (ropeY > y - 40 ? 14 : -14), x + reach, y - 36); g.stroke();
+    };
+    rope(false);
+    if (o.gold) { const r = 48 + plump * 20 + Math.sin(t * 8) * 4; const gr = g.createRadialGradient(x, y - 40, 10, x, y - 40, r); gr.addColorStop(0, rgba(C.o3, 0)); gr.addColorStop(0.7, rgba(C.o3, 0.25)); gr.addColorStop(1, rgba(C.o4, 0)); g.fillStyle = gr; g.beginPath(); g.arc(x, y - 40, r, 0, TAU); g.fill(); }
+    const fl = Math.sin(t * 6) * 3 + (o.move || 0) * -6;
+    g.fillStyle = pal.cape; g.beginPath(); g.moveTo(x - sh - 2, top); g.lineTo(x + sh + 2, top); g.lineTo(x + hem + 6 - fl, y - 4); g.lineTo(x - hem - 6 - fl, y - 4); g.closePath(); g.fill();
+    const lx = 3 + 6 * bw, lw = 7 * (0.8 + 0.25 * bw);
+    g.fillStyle = C.black; g.fillRect(x - lx - lw / 2, y - 10, lw, 10); g.fillRect(x + lx - lw / 2, y - 10, lw, 10);
+    g.fillStyle = pal.robe; g.beginPath(); g.moveTo(x - sh, top);
+    g.bezierCurveTo(x - bh * 1.05, top + 6, x - bh * 1.12, mid + 8, x - hem, bot);
+    g.lineTo(x + hem, bot);
+    g.bezierCurveTo(x + bh * 1.12, mid + 8, x + bh * 1.05, top + 6, x + sh, top);
+    g.closePath(); g.fill();
+    if (plump > 0.25) { g.fillStyle = rgba(pal.belly, Math.min(0.9, plump * 1.2)); g.beginPath(); g.ellipse(x, mid + 4, bh * 0.6, bh * 0.42, 0, 0, TAU); g.fill(); g.fillStyle = rgba(C.black, 0.5); g.beginPath(); g.ellipse(x, mid + 6, 1.6, 2.2, 0, 0, TAU); g.fill(); }
+    else { g.fillStyle = pal.band; g.fillRect(x - hem * 0.86, y - 22, hem * 1.72, 3); }
+    g.strokeStyle = pal.robe; g.lineWidth = 6 + plump * 3; g.lineCap = 'round';
+    const handY = o.ex ? y - 36 : y - 22 - plump * 4;
+    g.beginPath(); g.moveTo(x - sh, y - 42); g.lineTo(x - reach + 2, handY); g.moveTo(x + sh, y - 42); g.lineTo(x + reach - 2, handY); g.stroke();
+    g.fillStyle = pal.skin; g.beginPath(); g.arc(x - reach + 1, handY, 4 + plump, 0, TAU); g.arc(x + reach - 1, handY, 4 + plump, 0, TAU); g.fill();
+    const hr = 19 + plump * 5 + Math.min(0, fat) * 3, hk = hr / 19, hy = y - 62 - (hr - 19) * 0.6;
+    if (plump > 0.6) { g.fillStyle = pal.skin; g.beginPath(); g.ellipse(x, hy + hr * 0.75, hr * 0.7, hr * 0.38, 0, 0, TAU); g.fill(); g.strokeStyle = rgba(C.o2, 0.5); g.lineWidth = 1.5; g.beginPath(); g.arc(x, hy + hr * 0.62, hr * 0.5, 0.5, Math.PI - 0.5); g.stroke(); }
+    g.fillStyle = pal.skin; g.beginPath(); g.ellipse(x, hy, hr * (1 + plump * 0.08), hr, 0, 0, TAU); g.fill();
+    g.save(); g.translate(x, hy); g.scale(hk, hk); g.translate(-x, -hy);
+    if (plump > 0.35) { g.fillStyle = rgba(C.o3, 0.35 + plump * 0.25); g.beginPath(); g.ellipse(x - 12, hy + 6, 5 + plump * 2, 3.5 + plump, 0, 0, TAU); g.ellipse(x + 12, hy + 6, 5 + plump * 2, 3.5 + plump, 0, 0, TAU); g.fill(); }
+    g.fillStyle = C.black;
+    if (st === 0) {
+      g.lineWidth = 2.2; g.strokeStyle = C.black;
+      g.beginPath(); g.moveTo(x - 10, hy - 1); g.lineTo(x - 3, hy + 1); g.moveTo(x + 10, hy - 1); g.lineTo(x + 3, hy + 1); g.stroke();
+      g.beginPath(); g.arc(x, hy + 11, 5, Math.PI + 0.3, -0.3); g.stroke();
+      g.fillStyle = rgba(C.p3, 0.5); g.beginPath(); g.ellipse(x - 7, hy + 5, 4, 2, 0, 0, TAU); g.ellipse(x + 7, hy + 5, 4, 2, 0, 0, TAU); g.fill();
+    } else if (st === 1) {
+      g.beginPath(); g.arc(x - 6, hy, 2.6, 0, TAU); g.arc(x + 6, hy, 2.6, 0, TAU); g.fill();
+      g.strokeStyle = C.black; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 4, hy + 8); g.lineTo(x + 4, hy + 8); g.stroke();
+    } else {
+      g.strokeStyle = C.black; g.lineWidth = 2.4;
+      g.beginPath(); g.arc(x - 6, hy + 1, 3.2, Math.PI + 0.2, -0.2); g.moveTo(x + 9, hy + 1); g.arc(x + 6, hy + 1, 3.2, Math.PI + 0.2, -0.2); g.stroke();
+      g.fillStyle = C.black; g.beginPath(); g.arc(x, hy + 6, 6.5, 0, Math.PI); g.fill();
+      g.fillStyle = C.o3; g.beginPath(); g.arc(x, hy + 9, 3, 0, Math.PI); g.fill();
+      g.fillStyle = rgba(C.o3, 0.55); g.beginPath(); g.ellipse(x - 11, hy + 5, 4, 2.5, 0, 0, TAU); g.ellipse(x + 11, hy + 5, 4, 2.5, 0, 0, TAU); g.fill();
+    }
+    g.fillStyle = pal.hat; g.beginPath(); g.ellipse(x, hy - 14, 29, 6, 0, 0, TAU); g.fill();
+    g.beginPath(); g.moveTo(x - 15, hy - 15); g.lineTo(x + 15, hy - 15); g.quadraticCurveTo(x + 6, hy - 40, x + 18 + Math.sin(t * 3) * 3, hy - 52); g.quadraticCurveTo(x - 6, hy - 40, x - 15, hy - 15); g.fill();
+    g.fillStyle = pal.band; g.fillRect(x - 14, hy - 22, 28, 5);
+    g.restore();
+    rope(true);
+    if (st === 2) {
+      for (let k = 0; k < 4; k++) {
+        const a = t * 1.8 + k * TAU / 4, r = 42 + Math.sin(t * 3 + k) * 6, sx = x + Math.cos(a) * r, sy = y - 44 + Math.sin(a) * r * 0.75, s = 4 + Math.sin(t * 6 + k * 2) * 2;
+        g.fillStyle = k % 2 ? C.o5 : C.o4; g.beginPath(); for (let i = 0; i < 8; i++) { const aa = i / 8 * TAU, rr = i % 2 ? s * 0.3 : s; g.lineTo(sx + Math.cos(aa) * rr, sy + Math.sin(aa) * rr); } g.fill();
+      }
+    }
+    if (o.weight >= 70) {
+      g.fillStyle = C.p5;
+      for (let k = 0; k < 2; k++) { const ph = (t * 1.5 + k * 0.5) % 1; g.beginPath(); g.ellipse(x + (k ? hr + 1 : -hr - 1), hy - 4 + ph * 20, 2.5, 4, 0, 0, TAU); g.globalAlpha = 1 - ph; g.fill(); g.globalAlpha = 1; }
+      g.font = '15px Jua, sans-serif'; g.textAlign = 'center'; g.fillText('헉헉', x + hr + 15, hy - 26 + Math.sin(t * 8) * 2);
+    }
+    if (o.lock > 0) {
+      g.strokeStyle = C.p5; g.lineWidth = 2; g.beginPath();
+      for (let i = 0; i < 30; i++) { const a = t * 6 + i * 0.4, r = i * 0.5; g.lineTo(x + Math.cos(a) * r * 1.6, hy - 44 + Math.sin(a) * r * 0.6); }
+      g.stroke();
+      g.fillStyle = C.p5; g.font = '14px Jua, sans-serif'; g.textAlign = 'center'; g.fillText('지쳤어!', x, hy - 58);
+    }
+    g.restore();
+  }
+
+  // ---------- Audio ----------
+  let AC = null;
+  function audio() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } else if (AC.resume) AC.resume(); }
+  function tone(f0, f1, dur, type, vol, delay) {
+    if (!AC) return;
+    const t = AC.currentTime + (delay || 0), o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + 0.05);
+  }
+  const sfx = {
+    good() { tone(660, 990, 0.12, 'triangle', 0.14); tone(990, 1320, 0.16, 'sine', 0.1, 0.08); },
+    junk() { tone(220, 110, 0.25, 'square', 0.07); },
+    water() { tone(500, 900, 0.18, 'sine', 0.12); tone(900, 700, 0.12, 'sine', 0.08, 0.1); },
+    gold() { [784, 988, 1175, 1568].forEach((f, i) => tone(f, f, 0.18, 'triangle', 0.1, i * 0.07)); },
+    blocked() { tone(300, 300, 0.1, 'sine', 0.06); },
+    jump() { tone(180, 320, 0.08, 'sine', 0.05); },
+    tired() { tone(330, 160, 0.4, 'sawtooth', 0.05); },
+    deny() { tone(150, 140, 0.12, 'square', 0.05); },
+    clear() { [523, 659, 784, 1047].forEach((f, i) => tone(f, f, 0.3, 'triangle', 0.12, i * 0.12)); },
+    over() { [392, 330, 262, 196].forEach((f, i) => tone(f, f * 0.98, 0.3, 'sawtooth', 0.06, i * 0.15)); },
+    faster() { tone(440, 880, 0.3, 'triangle', 0.08); }
+  };
+
+  // ---------- Storage ----------
+  const loadBest = () => { try { return +localStorage.getItem('yumyum-best') || 0; } catch (e) { return 0; } };
+  const saveBest = v => { try { localStorage.setItem('yumyum-best', String(v)); } catch (e) {} };
+
+  // ---------- Game state ----------
+  const TIERS = [{ speed: 150, every: 1.0, junk: 0 }, { speed: 180, every: 0.8, junk: 10 }, { speed: 220, every: 0.6, junk: 20 }];
+  const hitR = () => 27 + Math.max(0, S.fatShow) * 16 + Math.min(0, S.fatShow) * 6;
+  let S;
+  let best = loadBest();
+  $('bestStart').textContent = best;
+  function reset() {
+    S = { screen: 'play', paused: false, health: 50, weight: 0, stamina: 100, time: 90, elapsed: 0, score: 0, x: W / 2, foods: [], spawnT: 0.4, ex: false, exAcc: 0, exPhase: 0, lockT: 0, goldT: 0, blinkT: 0, tier: 0, fx: [], texts: [], flash: 0, move: 0, fat: 0, fatShow: 0, body: 1, boing: 0 };
+  }
+  reset(); S.screen = 'start';
+
+  function pickFood(tier) {
+    const b = TIERS[tier].junk;
+    const weights = FOOD.map(f => f.kind === 'good' ? f.w * (50 - b) / 50 : f.kind === 'junk' ? f.w * (45 + b) / 45 : f.w);
+    let r = Math.random() * weights.reduce((a, c) => a + c, 0);
+    for (let i = 0; i < FOOD.length; i++) { r -= weights[i]; if (r <= 0) return FOOD[i]; }
+    return FOOD[0];
+  }
+  const fix = () => { S.health = clamp(S.health, 0, 100); S.weight = clamp(S.weight, 0, 100); S.stamina = clamp(S.stamina, 0, 100); };
+  function floatText(text, color, x, y) { S.texts.push({ text, color, x: clamp(x, 130, W - 130), y, t: 0 }); }
+  function burst(kind, x, y) {
+    if (kind === 'glow') {
+      S.fx.push({ type: 'glow', x, y, t: 0 });
+      for (let k = 0; k < 14; k++) { const a = rand(0, TAU), sp = rand(60, 170); S.fx.push({ type: 'spark', x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, t: 0, life: rand(0.45, 0.8), s: rand(3, 6) }); }
+      S.flash = 1;
+    } else {
+      for (let k = 0; k < 10; k++) { const a = rand(0, TAU), sp = rand(30, 90); S.fx.push({ type: 'puff', x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 20, t: 0, life: rand(0.4, 0.7), s: rand(5, 10), c: kind === 'junk' ? C.p3 : C.p5 }); }
+    }
+  }
+  function eat(f, fx, fy) {
+    const e = f.eff, cx = S.x, cy = GROUND - 40;
+    S.boing = 1;
+    if (f.kind === 'good') {
+      S.health += e.health; S.score += e.score; S.fat -= 0.07;
+      floatText(`+${e.score}점 · 건강 +${e.health}`, C.o5, fx, fy);
+      burst('glow', cx, cy); sfx.good();
+    } else if (f.kind === 'junk') {
+      if (S.goldT > 0) { floatText('황금 사과 보호! 효과 없음', C.o4, fx, fy); sfx.blocked(); }
+      else { S.weight += e.weight; S.health += e.health; S.fat += e.weight / 100; floatText(`무거움 +${e.weight} · 건강 −5`, C.p5, fx, fy); burst('junk', cx, cy); sfx.junk(); }
+    } else if (f.id === 'water') {
+      S.weight += e.weight; S.fat -= 0.12; floatText('무거움 −20', C.p5, fx, fy); burst('water', cx, cy); sfx.water();
+    } else {
+      S.goldT = 5; floatText('황금 사과! 5초간 정크 무시', C.o3, fx, fy); burst('glow', cx, cy); sfx.gold();
+    }
+    S.fat = clamp(S.fat, -0.4, 1);
+    fix();
+  }
+
+  // ---------- Input ----------
+  const input = { left: false, right: false, ex: false };
+  // Read keys by code, key name and legacy keyCode so holding works with Korean IME and older browsers too
+  const KEYMAP = { ArrowLeft: 'left', Left: 'left', KeyA: 'left', a: 'left', A: 'left', 37: 'left', 65: 'left',
+                   ArrowRight: 'right', Right: 'right', KeyD: 'right', d: 'right', D: 'right', 39: 'right', 68: 'right',
+                   Space: 'ex', ' ': 'ex', Spacebar: 'ex', 32: 'ex' };
+  const keyOf = e => KEYMAP[e.code] || KEYMAP[e.key] || KEYMAP[e.keyCode] || null;
+  addEventListener('keydown', e => {
+    const k = keyOf(e);
+    if (k || e.code === 'ArrowUp' || e.code === 'ArrowDown') e.preventDefault();
+    if (k) input[k] = true;
+    if ((e.code === 'KeyP' || e.key === 'p' || e.key === 'P' || e.keyCode === 80) && !e.repeat && S.screen === 'play') setPaused(!S.paused);
+    if (e.key === 'Enter' && !e.repeat && (S.screen === 'start' || S.screen === 'result' || S.screen === 'help')) { e.preventDefault(); start(); }
+  });
+  addEventListener('keyup', e => { const k = keyOf(e); if (k) { input[k] = false; e.preventDefault(); } });
+  const autoPause = () => { input.left = input.right = input.ex = false; if (S.screen === 'play' && !S.paused) setPaused(true); };
+  addEventListener('blur', autoPause);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
+
+  const touch = matchMedia('(pointer: coarse)').matches;
+  $('pad').hidden = !touch;
+  document.querySelectorAll('#pad button').forEach(b => {
+    const k = b.dataset.k;
+    const on = e => { e.preventDefault(); audio(); if (k === 'pause') { if (S.screen === 'play') setPaused(!S.paused); return; } input[k] = true; b.classList.add('on'); };
+    const off = () => { if (k !== 'pause') { input[k] = false; b.classList.remove('on'); } };
+    b.addEventListener('pointerdown', on);
+    b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
+    b.addEventListener('contextmenu', e => e.preventDefault());
+  });
+
+  function show(id) { ['start', 'help', 'result', 'pause'].forEach(s => $(s).hidden = s !== id); }
+  function setPaused(v) { S.paused = v; show(v ? 'pause' : null); if (v) input.left = input.right = input.ex = false; }
+  function start() { audio(); reset(); show(null); input.left = input.right = input.ex = false; canvas.focus({ preventScroll: true }); }
+  function finish(cleared) {
+    S.screen = 'result';
+    const isBest = S.score > best;
+    if (isBest) { best = S.score; saveBest(best); }
+    $('resTag').textContent = cleared ? '90초 완주' : '게임 오버';
+    $('resTitle').textContent = cleared ? '축제 완주, 클리어!' : '게임 오버';
+    $('resReason').textContent = cleared ? '건강하게 먹고 끝까지 버텼어요.' : (S.health <= 0 ? '건강 게이지가 0이 됐어요.' : '무거움 게이지가 100이 됐어요.');
+    $('resScore').textContent = S.score;
+    $('newBest').hidden = !isBest || S.score === 0;
+    $('bestRes').textContent = best; $('bestStart').textContent = best;
+    const st = stageOf(S.health);
+    $('resStage').textContent = `${STAGES[st]} · ${BODY[bodyOf(S.fatShow)][0]}`;
+    const pc = $('portrait'), pg = pc.getContext('2d');
+    pg.setTransform(2, 0, 0, 2, 0, 0); pg.clearRect(0, 0, 96, 104);
+    drawKid(pg, 48, 98, { stage: st, weight: S.weight, fat: S.fatShow, t: 1, ex: false, exPhase: 0, lock: 0, gold: false });
+    show('result');
+    (cleared ? sfx.clear : sfx.over)();
+    $('againBtn').focus({ preventScroll: true });
+  }
+  $('startBtn').addEventListener('click', start);
+  $('helpStart').addEventListener('click', start);
+  $('againBtn').addEventListener('click', start);
+  $('helpBtn').addEventListener('click', () => { S.screen = 'help'; show('help'); });
+  $('helpBack').addEventListener('click', () => { S.screen = 'start'; show('start'); });
+  $('homeBtn').addEventListener('click', () => { S.screen = 'start'; show('start'); });
+  $('resumeBtn').addEventListener('click', () => setPaused(false));
+
+  // ---------- Update ----------
+  function update(dt) {
+    S.elapsed += dt;
+    S.time = Math.max(0, 90 - S.elapsed);
+    const tier = S.elapsed < 30 ? 0 : S.elapsed < 60 ? 1 : 2;
+    if (tier !== S.tier) { S.tier = tier; floatText('음식이 더 빨라져요!', C.o3, W / 2, 140); sfx.faster(); }
+
+    // Exercise (jump rope): blocked while exhausted
+    S.lockT = Math.max(0, S.lockT - dt);
+    S.blinkT = Math.max(0, S.blinkT - dt);
+    if (input.ex && S.lockT > 0) { if (S.blinkT <= 0) sfx.deny(); S.blinkT = 0.5; }
+    S.ex = input.ex && S.lockT <= 0;
+    if (S.ex) {
+      S.exAcc += dt; S.exPhase += dt * 4;
+      while (S.exAcc >= 0.5) {
+        S.exAcc -= 0.5; S.weight -= 5; S.stamina -= 10; S.fat = Math.max(-0.4, S.fat - 0.025); fix(); sfx.jump();
+        if (S.stamina <= 0) { S.stamina = 0; S.lockT = 3; S.ex = false; S.exAcc = 0; floatText('체력 0! 3초간 줄넘기 불가', C.p5, S.x, GROUND - 130); sfx.tired(); break; }
+      }
+    } else {
+      S.exAcc = 0; S.exPhase = 0;
+      S.stamina = Math.min(100, S.stamina + 10 * dt);
+    }
+
+    // Movement (not while jumping rope)
+    let dir = 0;
+    if (!S.ex) dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    const sp = 300 * (S.weight >= 70 ? 0.7 : 1);
+    S.x = clamp(S.x + dir * sp * dt, hitR() + 4, W - hitR() - 4);
+    S.move += (dir - S.move) * Math.min(1, dt * 8);
+
+    // Spawning & falling
+    S.spawnT -= dt;
+    if (S.spawnT <= 0) { S.spawnT += TIERS[tier].every; const f = pickFood(tier); S.foods.push({ f, x: rand(30, W - 30), y: -30, rot: rand(-0.3, 0.3), spin: rand(-1.5, 1.5) }); }
+    const v = TIERS[tier].speed;
+    const cx = S.x, cy = GROUND - 40 - (S.ex ? Math.abs(Math.sin(S.exPhase * Math.PI)) * 16 : 0);
+    const caught = [];
+    for (let i = S.foods.length - 1; i >= 0; i--) {
+      const it = S.foods[i];
+      it.y += v * dt; it.rot += it.spin * dt;
+      const nx = clamp(cx, it.x - 24, it.x + 24), ny = clamp(cy, it.y - 24, it.y + 24);
+      if ((cx - nx) ** 2 + (cy - ny) ** 2 <= hitR() ** 2) { caught.push(it); S.foods.splice(i, 1); continue; }
+      if (it.y - 24 > GROUND) S.foods.splice(i, 1);
+    }
+    caught.forEach(it => eat(it.f, it.x, it.y - 20));
+    S.goldT = Math.max(0, S.goldT - dt);
+
+    // Body shape eases toward the target and announces each new shape
+    S.fatShow += (S.fat - S.fatShow) * Math.min(1, dt * 4);
+    S.boing = Math.max(0, S.boing - dt * 3);
+    const bs = bodyOf(S.fatShow);
+    if (bs !== S.body) {
+      floatText(bs < S.body ? (bs === 0 ? '날씬해졌어요!' : '몸이 가벼워졌어요') : (bs === 3 ? '동글동글해졌어요…' : '통통해졌어요'), bs < S.body ? C.o4 : C.p5, S.x, GROUND - 150);
+      S.body = bs;
+    }
+
+    // Effects
+    for (let i = S.fx.length - 1; i >= 0; i--) {
+      const p = S.fx[i]; p.t += dt;
+      if (p.vx !== undefined) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 120 * dt; }
+      if (p.t > (p.life || 0.6)) S.fx.splice(i, 1);
+    }
+    for (let i = S.texts.length - 1; i >= 0; i--) { const tx = S.texts[i]; tx.t += dt; tx.y -= 40 * dt; if (tx.t > 1.2) S.texts.splice(i, 1); }
+    S.flash = Math.max(0, S.flash - dt * 3);
+
+    // End: game over wins over a simultaneous time-out
+    if (S.health <= 0 || S.weight >= 100) finish(false);
+    else if (S.time <= 0) finish(true);
+  }
+
+  function updateAmbient(dt) {
+    clouds.forEach(c => { c.x += c.sp * dt; if (c.x - c.w > W + 120) c.x = -c.w - rand(0, 100); });
+    bats.forEach(b => { b.x += b.vx * dt; if (b.vx > 0 && b.x > W + 30) { b.x = -30; b.y = rand(70, 290); } if (b.vx < 0 && b.x < -30) { b.x = W + 30; b.y = rand(70, 290); } });
+    flies.forEach(f => { f.ph += dt * f.sp; f.x += Math.cos(f.ph * 1.3) * 12 * dt; f.y += Math.sin(f.ph) * 10 * dt; if (f.x < -10) f.x = W + 10; if (f.x > W + 10) f.x = -10; });
+  }
+
+  // ---------- Render ----------
+  function bar(x, y, w, label, val, color, blink) {
+    ctx.fillStyle = C.o5; ctx.font = '15px Jua, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(label, x, y - 6);
+    ctx.textAlign = 'right'; ctx.fillStyle = C.p5; ctx.fillText(Math.round(val), x + w, y - 6);
+    ctx.fillStyle = C.black; ctx.fillRect(x, y, w, 12);
+    ctx.fillStyle = blink ? C.o5 : color; ctx.fillRect(x + 2, y + 2, (w - 4) * val / 100, 8);
+    if (blink) { ctx.strokeStyle = C.o3; ctx.lineWidth = 2; ctx.strokeRect(x - 1, y - 1, w + 2, 14); }
+  }
+  function render(t) {
+    const cam = (S.x - W / 2);
+    // Layer 1: sky + moon (slowest)
+    ctx.drawImage(skyLayer, -100 - cam * 0.04, 0, skyLayer.lw, 600);
+    clouds.forEach(c => { ctx.fillStyle = rgba(C.p2, 0.55); ctx.beginPath(); ctx.ellipse(c.x - cam * 0.06, c.y, c.w / 2, 12, 0, 0, TAU); ctx.ellipse(c.x - cam * 0.06 + c.w * 0.2, c.y - 8, c.w / 3, 10, 0, 0, TAU); ctx.fill(); });
+    bats.forEach(b => drawBat(b, t));
+    // Layer 2: castle (middle speed, slow drift)
+    drawWrapped(castleLayer, cam * 0.15 + t * 4, 0);
+    // Layer 3: stall street (fastest background layer)
+    const so = cam * 0.4;
+    drawWrapped(streetLayer, so, 0);
+    const off = ((so % STREET_W) + STREET_W) % STREET_W;
+    lanterns.forEach(l => {
+      for (const base of [-off, STREET_W - off]) {
+        const lx = base + l.x; if (lx < -40 || lx > W + 40) continue;
+        const f = 0.7 + 0.3 * Math.sin(t * l.sp + l.ph) * Math.sin(t * l.sp * 0.37 + l.ph * 2) + (Math.sin(t * 23 + l.ph * 5) > 0.97 ? -0.4 : 0);
+        drawPumpkin(lx, l.y, l.size, clamp(f, 0.2, 1));
+      }
+    });
+    ctx.drawImage(groundLayer, 0, GROUND, 800, 60);
+    // Fireflies
+    flies.forEach(f => {
+      const a = 0.35 + 0.65 * Math.max(0, Math.sin(t * 2.2 + f.ph * 3));
+      const gr = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r * 5); gr.addColorStop(0, rgba(C.o4, 0.6 * a)); gr.addColorStop(1, rgba(C.o4, 0));
+      ctx.fillStyle = gr; ctx.fillRect(f.x - f.r * 5, f.y - f.r * 5, f.r * 10, f.r * 10);
+      ctx.fillStyle = rgba(C.o5, a); ctx.beginPath(); ctx.arc(f.x, f.y, f.r * 0.6, 0, TAU); ctx.fill();
+    });
+
+    if (S.screen !== 'play') return;
+
+    // Foods: healthy ones sparkle, junk smoulders dark, items glow in their own colour
+    const star = (sx, sy, r, rot) => { ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i / 8 * TAU + rot, rr = i % 2 ? r * 0.28 : r; ctx.lineTo(sx + Math.cos(a) * rr, sy + Math.sin(a) * rr); } ctx.fill(); };
+    S.foods.forEach(it => {
+      const k = it.f.kind, ph = t * 5 + it.x * 0.05;
+      if (k === 'good' || it.f.id === 'gold') {
+        const gold = it.f.id === 'gold', pulse = 0.5 + 0.5 * Math.sin(ph);
+        const gr = ctx.createRadialGradient(it.x, it.y, 8, it.x, it.y, gold ? 50 : 42);
+        gr.addColorStop(0, rgba(C.o5, (gold ? 0.75 : 0.55) * (0.6 + 0.4 * pulse))); gr.addColorStop(0.45, rgba(C.o3, 0.35 * (0.6 + 0.4 * pulse))); gr.addColorStop(1, rgba(C.o3, 0));
+        ctx.fillStyle = gr; ctx.fillRect(it.x - 50, it.y - 50, 100, 100);
+        for (let i = 0; i < (gold ? 5 : 3); i++) {
+          const a = t * 1.6 + i * TAU / (gold ? 5 : 3) + it.x, r = 30 + Math.sin(t * 3 + i) * 3, tw = Math.max(0, Math.sin(t * 7 + i * 2.1 + it.x));
+          ctx.fillStyle = rgba(i % 2 ? C.o5 : C.o4, 0.35 + 0.65 * tw);
+          star(it.x + Math.cos(a) * r, it.y + Math.sin(a) * r, 3 + tw * 4, t * 2);
+        }
+      } else if (k === 'junk') {
+        const gr = ctx.createRadialGradient(it.x, it.y, 10, it.x, it.y, 40);
+        gr.addColorStop(0, rgba(C.black, 0.85)); gr.addColorStop(0.6, rgba(C.p0, 0.6)); gr.addColorStop(1, rgba(C.black, 0));
+        ctx.fillStyle = gr; ctx.fillRect(it.x - 40, it.y - 40, 80, 80);
+        for (let i = 0; i < 3; i++) {
+          const u = ((t * 0.9 + i / 3 + it.x * 0.01) % 1), sx = it.x + Math.sin(t * 2 + i * 2 + it.x) * 8 + (i - 1) * 10, sy = it.y - 20 - u * 30;
+          ctx.fillStyle = rgba(i % 2 ? C.p2 : C.p1, 0.8 * (1 - u)); ctx.beginPath(); ctx.arc(sx, sy, 5 + u * 7, 0, TAU); ctx.fill();
+        }
+      } else {
+        const gr = ctx.createRadialGradient(it.x, it.y, 10, it.x, it.y, 38); gr.addColorStop(0, rgba(C.p5, 0.5)); gr.addColorStop(1, rgba(C.p5, 0));
+        ctx.fillStyle = gr; ctx.fillRect(it.x - 38, it.y - 38, 76, 76);
+      }
+      ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot);
+      if (k === 'junk') { ctx.shadowColor = C.p4; ctx.shadowBlur = 10; }
+      ctx.drawImage(sprites[it.f.id], -24, -24, 48, 48);
+      ctx.shadowBlur = 0;
+      if (k === 'good') { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.18 + 0.18 * Math.sin(ph); ctx.drawImage(sprites[it.f.id], -24, -24, 48, 48); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+      ctx.restore();
+    });
+
+
+    // Glow effects behind the kid
+    S.fx.forEach(p => {
+      if (p.type !== 'glow') return;
+      const k = p.t / 0.6, r = 30 + k * 110;
+      const gr = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+      gr.addColorStop(0, rgba(C.o5, 0.75 * (1 - k))); gr.addColorStop(0.4, rgba(C.o3, 0.45 * (1 - k))); gr.addColorStop(1, rgba(C.o3, 0));
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, TAU); ctx.fill();
+    });
+    drawKid(ctx, S.x, GROUND, { stage: stageOf(S.health), weight: S.weight, fat: S.fatShow, squash: Math.sin((1 - S.boing) * Math.PI * 3) * S.boing * 0.14, t, ex: S.ex, exPhase: S.exPhase, lock: S.lockT, gold: S.goldT > 0, move: S.move });
+    S.fx.forEach(p => {
+      if (p.type === 'spark') {
+        const a = 1 - p.t / p.life, s = p.s * (0.6 + a * 0.6);
+        ctx.fillStyle = rgba(C.o5, a); ctx.beginPath();
+        for (let i = 0; i < 8; i++) { const aa = i / 8 * TAU + p.t * 4, rr = i % 2 ? s * 0.3 : s; ctx.lineTo(p.x + Math.cos(aa) * rr, p.y + Math.sin(aa) * rr); }
+        ctx.fill();
+      } else if (p.type === 'puff') {
+        const a = 1 - p.t / p.life; ctx.fillStyle = rgba(p.c, 0.6 * a); ctx.beginPath(); ctx.arc(p.x, p.y, p.s * (1.3 - a * 0.3), 0, TAU); ctx.fill();
+      }
+    });
+    if (S.flash > 0) { ctx.fillStyle = rgba(C.o4, 0.12 * S.flash); ctx.fillRect(0, 0, W, H); }
+
+    // Floating texts
+    ctx.textAlign = 'center'; ctx.font = '18px Jua, sans-serif';
+    S.texts.forEach(tx => { ctx.globalAlpha = Math.min(1, 1.6 - tx.t * 1.3); ctx.fillStyle = C.black; ctx.fillText(tx.text, tx.x + 1, tx.y + 2); ctx.fillStyle = tx.color; ctx.fillText(tx.text, tx.x, tx.y); });
+    ctx.globalAlpha = 1;
+
+    // HUD
+    ctx.fillStyle = rgba(C.black, 0.62); ctx.fillRect(0, 0, W, 64);
+    ctx.fillStyle = rgba(C.o3, 0.5); ctx.fillRect(0, 64, W, 1);
+    const blink = S.blinkT > 0 && Math.floor(t * 10) % 2 === 0;
+    bar(18, 38, 150, '건강', S.health, C.o3, false);
+    bar(190, 38, 150, '무거움', S.weight, S.weight >= 70 ? C.p5 : C.p4, false);
+    bar(362, 38, 150, S.lockT > 0 ? `체력 (휴식 ${S.lockT.toFixed(1)}초)` : '체력', S.stamina, C.o5, blink);
+    ctx.textAlign = 'center'; ctx.font = '13px Jua, sans-serif'; ctx.fillStyle = C.p5; ctx.fillText('몸매', 552, 16);
+    ctx.font = '18px Jua, sans-serif'; ctx.fillStyle = S.body <= 1 ? C.o4 : C.p5; ctx.fillText(BODY[S.body][0], 552, 46);
+    ctx.textAlign = 'right'; ctx.fillStyle = S.time <= 10 ? C.o3 : C.o5; ctx.font = '34px Jua, sans-serif';
+    ctx.fillText(Math.ceil(S.time) + '초', 640, 46);
+    ctx.font = '13px Jua, sans-serif'; ctx.fillStyle = C.p5; ctx.fillText('남은 시간', 640, 16);
+    ctx.font = '30px Jua, sans-serif'; ctx.fillStyle = C.o3; ctx.fillText(S.score, W - 18, 46);
+    ctx.font = '13px Jua, sans-serif'; ctx.fillStyle = C.p5; ctx.fillText('점수', W - 18, 16);
+    if (S.goldT > 0) {
+      ctx.fillStyle = C.o3; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(W / 2 - 110, 74, 220, 26, 13) : ctx.rect(W / 2 - 110, 74, 220, 26); ctx.fill();
+      ctx.fillStyle = C.black; ctx.textAlign = 'center'; ctx.font = '16px Jua, sans-serif'; ctx.fillText(`황금 사과 보호 ${S.goldT.toFixed(1)}초`, W / 2, 92);
+    }
+  }
+
+  // ---------- Fit 800x600 into the window ----------
+  function fit() {
+    const padH = $('pad').hidden ? 0 : 96;
+    const s = Math.min((innerWidth - 32) / W, (innerHeight - 24 - padH) / H, 1.6);
+    $('stage').style.transform = `scale(${s})`;
+    $('wrap').style.width = W * s + 'px'; $('wrap').style.height = H * s + 'px';
+  }
+  addEventListener('resize', fit); fit();
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const t = now / 1000;
+    const frozen = S.screen === 'play' && S.paused;
+    if (!frozen) updateAmbient(dt);
+    if (S.screen === 'play' && !S.paused) update(dt);
+    render(t);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
